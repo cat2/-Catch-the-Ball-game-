@@ -1,0 +1,93 @@
+import pygame
+import sys
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants general
+WIDTH, HEIGHT = 600, 400
+PADDLE_WIDTH, PADDLE_HEIGHT = 100, 10
+BALL_RADIUS = 15
+FPS = 60
+
+# Colors basics
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+
+# Fonts system fonts don't work ok
+font = pygame.font.Font(None, 36)
+
+# Sounds could crash
+pygame.mixer.init()
+pop_sound = pygame.mixer.Sound("pop.wav")
+
+# Create the game window
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Catch the Ball")
+
+# Clock to control the frame rate
+clock = pygame.time.Clock()
+
+# Create the paddle
+paddle = pygame.Rect((WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - 10, PADDLE_WIDTH, PADDLE_HEIGHT)
+
+# Create a list to store the falling balls
+balls = []
+
+# Game variables
+score = 0
+level = 1
+
+def create_ball():
+    x = random.randint(BALL_RADIUS, WIDTH - BALL_RADIUS)
+    y = 0
+    return pygame.Rect(x, y, BALL_RADIUS * 2, BALL_RADIUS * 2)
+
+# Game loop
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    # Mouse moves paddle
+    paddle.x, _ = pygame.mouse.get_pos()
+    paddle.x -= PADDLE_WIDTH // 2
+
+    # Create a new ball occasionally
+    if random.random() < 0.02 + level * 0.01:
+        balls.append(create_ball())
+
+    # Move and remove balls
+    for ball in balls:
+        ball.y += 5
+        if ball.colliderect(paddle):
+            balls.remove(ball)
+            score += 1
+            pop_sound.play()
+        elif ball.y > HEIGHT:
+            balls.remove(ball)
+
+    # Draw everything for game
+    screen.fill(BLACK)
+    pygame.draw.rect(screen, WHITE, paddle)
+    for ball in balls:
+        pygame.draw.circle(screen, RED, ball.center, BALL_RADIUS)
+
+    # Draw the score and level
+    score_text = font.render(f"Score: {score}", True, WHITE)
+    level_text = font.render(f"Level: {level}", True, WHITE)
+    screen.blit(score_text, (10, 10))
+    screen.blit(level_text, (10, 50))
+
+    # Update the display
+    pygame.display.flip()
+
+    # Increase the level every 10 points
+    if score % 10 == 0 and score != 0:
+        level += 1
+
+    # Cap the frame rate
+    clock.tick(FPS)
